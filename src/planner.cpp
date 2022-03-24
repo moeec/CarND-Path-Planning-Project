@@ -7,9 +7,13 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-Planner::Planner() {}
 
-Planner::~Planner() {}
+void Planner::init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals)
+{
+//
+is_initialized = true; 
+}
+
 
 void Planner::predict(double ego_s, int prev_size, vector<double> sensor_fusion) 
 {
@@ -19,7 +23,7 @@ void Planner::predict(double ego_s, int prev_size, vector<double> sensor_fusion)
 }
 
 
-void Planner::straight_line(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals) 
+void Planner::straight(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals) 
 {
   for (int i = 0; i < 50; ++i) 
   {
