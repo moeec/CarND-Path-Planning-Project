@@ -17,7 +17,7 @@ public:
   	// Boolean to Check Leanes
   	bool RightLaneClearCheck;
   	bool LeftLaneClearCheck;
-  	bool ThisLaneClearCheck
+  	bool ThisLaneClearCheck;
   
   	// Constructor
   	Planner() : is_initialized(false) {}
@@ -38,8 +38,6 @@ public:
  	void getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y);
   
  	void NextWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y);
-  
- 	void predict(double s, int prev_size, vector<vector<double>> sensor_fusion);
  
 	const bool initialized() const 
  	{
