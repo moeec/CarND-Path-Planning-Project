@@ -7,14 +7,19 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
+#include "planner.h"
 
 // for convenience
 using nlohmann::json;
 using std::string;
 using std::vector;
 
+ 
+
 int main() {
   uWS::Hub h;
+  
+ 
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
   vector<double> map_waypoints_x;
@@ -27,11 +32,15 @@ int main() {
   string map_file_ = "../data/highway_map.csv";
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
-
+  
+  // Setting up instance of planner
+  //Planner planner;
+  
   std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
 
   string line;
-  while (getline(in_map_, line)) {
+  while (getline(in_map_, line)) 
+  {
     std::istringstream iss(line);
     double x;
     double y;
@@ -49,6 +58,7 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
+  
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
@@ -92,13 +102,16 @@ int main() {
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
+          bool RightLaneClearCheck; 
+          bool LeftLaneClearCheck; 
+          bool ThisLaneClearCheck;
+          double dist_inc = 0.5;
+          
+          Planner planner_s;
+          planner_s.init(RightLaneClearCheck, LeftLaneClearCheck, ThisLaneClearCheck, dist_inc, next_x_vals, next_y_vals);  
+          planner_s.straight(dist_inc, next_x_vals, next_y_vals);
 
-          /**
-           * TODO: define a path made up of (x,y) points that the car will visit
-           *   sequentially every .02 seconds
-           */
-
-
+                   
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
