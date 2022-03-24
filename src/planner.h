@@ -1,37 +1,55 @@
-#ifndef planner_H_
-#define planner_H_
+#ifndef PLANNER_H_
+#define PLANNER_H_
 
-#include <fstream>
-#include <string>
-#include <vector>
 #include "planner.h"
 
-class Planner 
-{
- public:
-  /**
-   * Constructor.
-   */
-  
-  Planner();
+
+class Planner {
+	
+	
+	// Flag, if filter is initialized
+	bool is_initialized;
+	
+public:
+	
+	// Boolean to Check Leanes
   bool RightLaneClearCheck;
   bool LeftLaneClearCheck;
-  bool ThisLaneClearCheck;
+  bool ThisLaneClearCheck
+	// Constructor
+	// @param M Number of particles
+	Planner() : is_initialized(false) {}
 
-  /**
-   * Destructor.
-   */
-  virtual ~Planner();
-  // determine what options are available to the planner based on sensor_fusion
-  
-  void predict(double s, int prev_size, vector<vector<double>> sensor_fusion);
+	// Destructor
+	~Planner() {}
+
+	/**
+	 */
+	/**
+	 * initialized Returns whether particle filter is initialized yet or not.
+	 */
+ void init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals);
  
- private:
-  // check whether the tracking toolbox was initialized or not (first measurement)
-  bool is_initialized_;
-
-  // previous timestamp
-  long long previous_timestamp_;
+ void predict(double s, int prev_size, vector<vector<double>> sensor_fusion);
+  
+ void predict(double ego_s, int prev_size, vector<double> sensor_fusion); 
+  
+ void straight(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals); 
+  
+ void distance(double x1, double y1, double x2, double y2);
+  
+ void getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y);
+  
+ void NextWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y);
+  
+ void predict(double s, int prev_size, vector<vector<double>> sensor_fusion);
+ 
+	const bool initialized() const 
+ {
+  return is_initialized;
+	}
 };
 
-#endif // Planner_H_
+
+
+#endif /* PLANNER_H_ */
