@@ -1,8 +1,10 @@
 #include "planner.h"
+#include "helpers.h"
 #include <iostream>
+#include <vector>
+#include <numeric>
+#include <math.h>
 
-using Eigen::VectorXd;
-using Eigen::MatrixXd;
 using std::vector;
 using std::cout;
 using std::endl;
@@ -14,17 +16,9 @@ void Planner::init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisL
 is_initialized = true; 
 }
 
-
-void Planner::predict(double ego_s, int prev_size, vector<double> sensor_fusion) 
+void Planner::straight(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals, double car_x, double car_y, double car_yaw)
 {
-  RightLaneClearCheck = true;
-  LeftLaneClearCheck = true;
-  ThisLaneClearCheck = true;
-}
-
-
-void Planner::straight(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals) 
-{
+  
   for (int i = 0; i < 50; ++i) 
   {
   next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
@@ -40,15 +34,20 @@ int getLane(double d0)
   else {mylane = 2;}
   return mylane;
 }
-  
-  
 
-void Planner::distance(double x1, double y1, double x2, double y2)
+void Planner::predict(double ego_s, int prev_size, vector<double> sensor_fusion) 
+{
+  RightLaneClearCheck = true;
+  LeftLaneClearCheck = true;
+  ThisLaneClearCheck = true;
+}
+
+double Planner::distance(double x1, double y1, double x2, double y2)
 {
     return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
 
-void Planner::ClosestWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y)
+double Planner::ClosestWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y)
 {
   double closestLen = 100000; //large number
   int closestWaypoint = 0;
@@ -68,7 +67,7 @@ void Planner::ClosestWaypoint(double x, double y, vector<double> maps_x, vector<
 }
   
   // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-void Planner::getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)
+double Planner::getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)
 {
     int next_wp = NextWaypoint(x, y, theta, maps_x, maps_y);
     
@@ -115,7 +114,7 @@ void Planner::getFrenet(double x, double y, double theta, vector<double> maps_x,
 }                                
                                    
 // transforms from Frenet s,d coordinates to Cartesian x,y
-void Planner::getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y)
+double Planner::getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y)
 {
   int prev_wp = -1;
   
@@ -141,7 +140,7 @@ void Planner::getXY(double s, double d, vector<double> maps_s, vector<double> ma
   return {x,y};
 }
                                   
-void Planner::NextWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y)
+double Planner::NextWaypoint(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)  
 {
   int closestWaypoint = ClosestWaypoint(x,y,maps_x, maps_y);
   double map_x = maps_x[closestWaypoint];
