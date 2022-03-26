@@ -67,7 +67,7 @@ double Planner::ClosestWaypoint(double x, double y, vector<double> maps_x, vecto
 }
   
   // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-double Planner::getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)
+vector<double> Planner::getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)
 {
     int next_wp = NextWaypoint(x, y, theta, maps_x, maps_y);
     
@@ -92,9 +92,9 @@ double Planner::getFrenet(double x, double y, double theta, vector<double> maps_
     double frenet_d = distance(x_x,x_y,proj_x,proj_y);
     
     // see if d value is positive 
-    double center_x = 1000-maps_x[prev_up];
-    double center_x = 2000-maps_y[prev_up];
-    double centerToPos = distance(center_x,center_y,x_x,x_y;
+    double center_x = 1000-maps_x[prev_wp];
+    double center_y = 2000-maps_y[prev_wp];
+    double centerToPos = distance(center_x,center_y,x_x,x_y);
     double centerToRef = distance(center_x,center_y,proj_x,proj_y);
                                   
     if(centerToPos <= centerToRef)
