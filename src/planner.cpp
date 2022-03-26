@@ -114,7 +114,7 @@ vector<double> Planner::getFrenet(double x, double y, double theta, vector<doubl
 }                                
                                    
 // transforms from Frenet s,d coordinates to Cartesian x,y
-double Planner::getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y)
+vector<double> Planner::getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y)
 {
   int prev_wp = -1;
   
@@ -123,7 +123,7 @@ double Planner::getXY(double s, double d, vector<double> maps_s, vector<double> 
     prev_wp++;
   }
   
-  int wp2 = (prev_wp+1)%maps_x,size();
+  int wp2 = (prev_wp+1)%maps_x.size();
   
   double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
   // the x,y, s along the segment
