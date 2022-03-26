@@ -107,9 +107,10 @@ int main() {
           bool ThisLaneClearCheck;
           double dist_inc = 0.5;
           
+          std::cout<<car_yaw;
           Planner planner_s;
           planner_s.init(RightLaneClearCheck, LeftLaneClearCheck, ThisLaneClearCheck, dist_inc, next_x_vals, next_y_vals);  
-          planner_s.straight(dist_inc, next_x_vals, next_y_vals);
+          planner_s.straight(dist_inc, next_x_vals, next_y_vals, car_x, car_y, car_yaw);
 
                    
           msgJson["next_x"] = next_x_vals;
