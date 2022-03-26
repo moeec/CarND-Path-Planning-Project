@@ -76,7 +76,7 @@ double Planner::getFrenet(double x, double y, double theta, vector<double> maps_
     
     if(next_wp == 0)
     {
-      prev_up = maps_x.size()-1;
+      prev_wp = maps_x.size()-1;
     }
     
     double n_x = maps_x[next_wp]-maps_x[prev_wp];
