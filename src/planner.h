@@ -20,27 +20,22 @@ class Planner
 {
 	// Flag, if filter is initialized
 	bool is_initialized;
-	
-	
-	
 public:
-	
-  
-  	// Boolean to Check Leanes
+	// Boolean to Check Leanes
   	bool RightLaneClearCheck;
   	bool LeftLaneClearCheck;
   	bool ThisLaneClearCheck;
     
-    double dist_inc;
-    vector<double> next_x_vals;
-    vector<double> next_y_vals;
+        double dist_inc;
+        vector<double> next_x_vals;
+        vector<double> next_y_vals;
     
-    double car_x; 
-    double car_y;
+        double car_x; 
+        double car_y;
     
-    double s; 
-    int prev_size;
-    vector<double> sensor_fusion;
+        double s; 
+        int prev_size;
+        vector<double> sensor_fusion;
     
   
   	// Constructor
@@ -51,7 +46,7 @@ public:
 
  	void init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals);
     
-    void straight(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals, double car_x, double car_y, double car_yaw); 
+        void straight(double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals, double car_x, double car_y, double car_yaw); 
   
  	void predict(double ego_s, int prev_size, vector<double> sensor_fusion); 
   
@@ -59,11 +54,11 @@ public:
   
  	double NextWaypoint(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y);
     
-    double ClosestWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y);
+        double ClosestWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y);
     
-    vector<double>  getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y);  
+        vector<double>  getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y);  
     
-    vector<double> getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y);
+        vector<double> getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y);
  
 	const bool initialized() const 
  	{
