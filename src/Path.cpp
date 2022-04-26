@@ -1,0 +1,184 @@
+#include <vector>
+#include <math.h>
+#include "MapPath.h"
+#include <string>
+#include "helpers_planning.h"
+#include <iostream>
+#include "Eigen-3.3/Eigen/Core"
+#include "Eigen-3.3/Eigen/QR"
+#include "Eigen-3.3/Eigen/LU"
+
+
+using std::vector;
+using std::string;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+using tk::spline;
+
+
+
+Path::Path() {}
+
+Path::~Path() {}
+
+void Path::Init_cloudpoints(Path map_points) 
+{
+  
+}
+
+void Path::set_map_path_data(vector<double> x,vector<double> y,vector<double> s,vector<double> dx, vector<double> dy ) 
+{
+// store the map data in a object variable  points_group  
+  for (int i = 0; i < x.size(); ++i)
+    
+  {  
+	  WayPoint w_p(x[i],y[i],s[i],dx[i],dy[i]);
+	  points_group.push_back(w_p);  
+  }
+}
+
+
+void Path::calculate_map_XYspline_for_s(double s_val, int d_val,vector<double> &prev_pts_x, vector<double> &prev_pts_y, double ref_yaw,int lane)
+{
+	 
+	 // This function isolates a part of the map starting from current position of car to about 90 m.
+     // When lane change is detected , it starts farther from the current position of car to allow smooth lane change interpolation	 
+	 
+	 vector<double> x_vect;
+	 vector<double> y_vect;
+	 vector<double> s_vect;
+	 
+
+	 
+	 for (WayPoint wp:points_group) 
+     {
+
+	  x_vect.push_back(wp.get_x_co());
+	  y_vect.push_back(wp.get_y_co());
+	  s_vect.push_back(wp.get_s_co());
+	  
+	 }
+	 
+	 vector<double>  XY_1;
+	 vector<double>  XY_2;
+	 vector<double>  XY_3;
+	 
+	 if (d_val !=0 )
+     {
+	  // Case : Lane change is observed. Start spline at 50 m from current position	 
+	  XY_1 = getXY(s_val+50, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	  XY_2 = getXY(s_val+65, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	  XY_3 = getXY(s_val+80, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	 }
+	 else 
+     {
+		 // Case : No Lane change. Start spline at 30 m from current position till 90 m
+		  XY_1 = getXY(s_val+30, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+		  XY_2 = getXY(s_val+60, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+		  XY_3 = getXY(s_val+90, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	 }
+	 
+	 
+	 vector<double> pts_x;
+	 vector<double> pts_y;
+	
+	 pts_x.push_back(prev_pts_x[0]);
+	 pts_x.push_back(prev_pts_x[1]);
+	 pts_x.push_back(XY_1[0]);
+	 pts_x.push_back(XY_2[0]);
+	 pts_x.push_back(XY_3[0]);
+	 
+	 
+	 pts_y.push_back(prev_pts_y[0]);
+	 pts_y.push_back(prev_pts_y[1]);
+	 pts_y.push_back(XY_1[1]);
+	 pts_y.push_back(XY_2[1]);
+	 pts_y.push_back(XY_3[1]);
+	 
+	 
+	 double ref_x = prev_pts_x[1];
+	 double ref_y = prev_pts_y[1];
+	 
+	 double shift_x;
+	 double shift_y;
+	 
+	 // Transform the points to appropriate lane
+	 for(int i = 0;i< pts_x.size();i++)
+     {
+		 shift_x = pts_x[i]-ref_x;
+		 shift_y = pts_y[i]-ref_y;
+ 
+		 
+		 pts_x[i] = ( shift_x * cos(0-ref_yaw) - shift_y * sin(0-ref_yaw) );
+		 pts_y[i] = ( shift_x * sin(0-ref_yaw) + shift_y * cos(0-ref_yaw) );	 
+	 }
+	 // set the points to spline
+	 xy_curve.set_points(pts_x,pts_y);
+}
+
+double Path::get_y_from_curve(double x)
+{
+	// return the y value from spline stored in xy_curve
+	return xy_curve(x);
+}
+
+
+
+WayPoint Path::get_map_convertedS_for_XY(double x_val, double y_val, double theta) 
+{
+	/* Return s,d value for a X ,Y.This function is not used */ 
+	 vector<double> x_vect;
+	 vector<double> y_vect;
+
+	 for (WayPoint wp:points_group) 
+     {
+	  x_vect.push_back(wp.get_x_co());
+	  y_vect.push_back(wp.get_y_co());
+	 }
+
+     vector<double>  SD = getFrenet(x_val,y_val,theta,x_vect,y_vect);
+
+	 WayPoint wp( x_val, y_val, SD[0], SD[1]);
+	 return(wp);
+}
+
+vector<WayPoint> Path::get_map_convertedSD_for_XY_jerk_optimised(vector<double> &s_start,vector<double> &s_end, vector<double> &d_start, vector<double> &d_end, double start_time, double end_time, double inc) 
+{
+	 /* this function calculates Jerk optimised trajectory on s - d coordinates. Not used */
+	 vector<double> x_vect;
+	 vector<double> y_vect;
+	 vector<double> s_vect;
+
+	 for (WayPoint wp:points_group) 
+     {
+	  x_vect.push_back(wp.get_x_co());
+	  y_vect.push_back(wp.get_y_co());
+	  s_vect.push_back(wp.get_s_co());
+	 }
+
+	 vector<double> coeff_s=JMT(s_start, s_end, end_time - start_time);
+	 vector<double> coeff_d=JMT(d_start, d_end, end_time - start_time);
+	 
+	 double running_time = start_time;
+	
+	 vector<WayPoint>  pts_jerk_optimised;
+	 double s_val,d_val;
+	 double d_x, d_y;
+	 
+	 while(running_time < (start_time + end_time) ){
+		 
+		 
+		
+		s_val=Poly_eval_JMT(coeff_s,running_time);
+		d_val=Poly_eval_JMT(coeff_d,running_time);
+		
+		vector<double>  XY = getXY(s_val, d_val, s_vect, x_vect, y_vect);
+
+	    pts_jerk_optimised.push_back(WayPoint( XY[0], XY[1], s_val, d_val)); 
+		
+		running_time += inc;
+		 
+	 }
+
+	 return(pts_jerk_optimised);
+}
