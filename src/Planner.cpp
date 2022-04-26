@@ -4,13 +4,16 @@
 #include <math.h>
 #include "WayPoint.h"
 #include "Planner.h"
-
+#include "helpers.h"
+#include "Eigen-3.3/Eigen/Core"
+#include "Eigen-3.3/Eigen/QR"
+#include "Eigen-3.3/Eigen/LU"
 
 using std::vector;
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
 using std::cout;
 using std::endl;
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 /**
  * Constructor.

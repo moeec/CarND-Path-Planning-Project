@@ -7,7 +7,8 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
-#include "planner.h"
+#include "Planner.h"
+#include "WayPoint.h"
 
 // for convenience
 using nlohmann::json;
@@ -110,7 +111,13 @@ int main() {
           std::cout<<car_yaw;
           Planner planner_s;
           planner_s.init(RightLaneClearCheck, LeftLaneClearCheck, ThisLaneClearCheck, dist_inc, next_x_vals, next_y_vals);  
-          planner_s.straight(dist_inc, next_x_vals, next_y_vals, car_x, car_y, car_yaw);
+          //planner_s.straight(dist_inc, next_x_vals, next_y_vals, car_x, car_y, car_yaw);
+          
+         for (int i = 0; i < 50; ++i) 
+         {
+           next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
+           next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
+         }
 
                    
           msgJson["next_x"] = next_x_vals;
