@@ -56,13 +56,18 @@ class Vehicle
     bool collision; // is there a collision?
     int  time; // time collision happens
   };
+
   map<string, int> lane_direction = {{"PLCL", 1}, {"LCL", 1}, 
                                      {"LCR", -1}, {"PLCR", -1}};
 
   int L = 1;
+
   int preferred_buffer = 6; // impacts "keep lane" behavior.
+
   int lane, s, goal_lane, goal_s, lanes_available;
+
   float v, target_speed, a, max_acceleration;
+
   string state;
 };
 

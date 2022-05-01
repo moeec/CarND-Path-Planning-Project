@@ -1,8 +1,9 @@
 #include <vector>
 #include <math.h>
 #include "Path.h"
+#include "spline.h"
 #include <string>
-#include "helpers_planning.h"
+#include "helpers.h"
 #include <iostream>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
@@ -155,30 +156,29 @@ vector<WayPoint> Path::get_map_convertedSD_for_XY_jerk_optimised(vector<double> 
 	  y_vect.push_back(wp.get_y_co());
 	  s_vect.push_back(wp.get_s_co());
 	 }
-
+  
 	 vector<double> coeff_s=JMT(s_start, s_end, end_time - start_time);
 	 vector<double> coeff_d=JMT(d_start, d_end, end_time - start_time);
-	 
 	 double running_time = start_time;
-	
 	 vector<WayPoint>  pts_jerk_optimised;
 	 double s_val,d_val;
 	 double d_x, d_y;
-	 
-	 while(running_time < (start_time + end_time) ){
-		 
-		 
-		
+	
+  while(running_time < (start_time + end_time) )
+     {	
 		s_val=Poly_eval_JMT(coeff_s,running_time);
 		d_val=Poly_eval_JMT(coeff_d,running_time);
-		
 		vector<double>  XY = getXY(s_val, d_val, s_vect, x_vect, y_vect);
-
 	    pts_jerk_optimised.push_back(WayPoint( XY[0], XY[1], s_val, d_val)); 
-		
 		running_time += inc;
-		 
 	 }
 
 	 return(pts_jerk_optimised);
+}
+
+double Path::Poly_eval_JMT(vector<double> coeff, double t)
+{
+	/* return coefficient of polynomial*/
+	return (coeff[0] + coeff[1] * t + coeff[2] * pow(t,2) + coeff[3] * pow(t,3) + coeff[4] * pow(t,4) + coeff[5] * pow(t,5));
+	
 }
