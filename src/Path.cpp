@@ -2,8 +2,8 @@
 #include <math.h>
 #include "Path.h"
 #include "spline.h"
+#include "helperspath.h"
 #include <string>
-#include "helpers.h"
 #include <iostream>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
@@ -39,7 +39,7 @@ void Path::set_map_path_data(vector<double> x,vector<double> y,vector<double> s,
 }
 
 
-void Path::calculate_map_XYspline_for_s(double s_val, int d_val,vector<double> &prev_pts_x, vector<double> &prev_pts_y, double ref_yaw,int lane)
+void Path::calculate_map_XYspline_for_s(double s_val, int d_val,vector<double> &prev_pts_x, vector<double> &prev_pts_y, double ref_yaw,int lane)   
 {
 	 
 	 // This function isolates a part of the map starting from current position of car to about 90 m.

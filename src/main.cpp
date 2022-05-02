@@ -9,6 +9,7 @@
 #include "json.hpp"
 #include "Planner.h"
 #include "WayPoint.h"
+#include "Path.h"
 
 // for convenience
 using nlohmann::json;
