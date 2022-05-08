@@ -42,7 +42,7 @@ class Planner {
 
     vector<double> get_y_values(); 
     
-    vector<double> JMT(vector<double> &start, vector<double> &end, double T);
+
   
   
   private:
