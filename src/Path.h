@@ -3,6 +3,7 @@
 #define MapPath_H
 #include <vector>
 #include "WayPoint.h"
+#include "Path.h"
 #include "spline.h"
 
 using std::vector;

@@ -166,7 +166,7 @@ void Road::display(int timestep)
   std::ostringstream oss;
   oss << "+Meters ======================+ step: " << timestep << std::endl;
   int i = s_min;
-
+  
   for (int lj = 0; lj < road.size(); ++lj) 
   {
     if (i%20 ==0) 

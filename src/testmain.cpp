@@ -78,13 +78,10 @@ int main() {
         auto j = json::parse(s);
         
         string event = j[0].get<string>();
-        
-        std::cout <<"j[0] ";
+        std::cout << "j[0] ";
         std::cout <<j[0];
         std::cout << "event has ";
         std::cout <<event;
-        std::cout <<"end of event";
-        
         if (event == "telemetry") {
           // j[1] is the data JSON object
           
@@ -95,15 +92,7 @@ int main() {
           double car_d = j[1]["d"];
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
-          std::cout << "|car_x|";
-          std::cout <<j[1]["|x|"];
-          std::cout << "|car_y|";
-          std::cout <<j[1]["|y|"];
-          std::cout <<"|all J|";
-          std::cout <<j;
-          
-          
-          
+
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
           auto previous_path_y = j[1]["previous_path_y"];
@@ -124,12 +113,10 @@ int main() {
           bool ThisLaneClearCheck;
           double dist_inc = 0.5;
           
-          Path highway;
-          highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
-          Planner present_path;  
           std::cout<<car_yaw;
           Planner planner_s;
-          planner_s.init(RightLaneClearCheck, LeftLaneClearCheck, ThisLaneClearCheck, next_x_vals, next_y_vals);  
+          planner_s.init(RightLaneClearCheck, LeftLaneClearCheck, ThisLaneClearCheck, dist_inc, next_x_vals, next_y_vals);  
+          //planner_s.straight(dist_inc, next_x_vals, next_y_vals, car_x, car_y, car_yaw);
           
          for (int i = 0; i < 50; ++i) 
          {

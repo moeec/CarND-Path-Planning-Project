@@ -25,7 +25,7 @@ Planner::Planner() {}
 Planner::~Planner() {}
 
 
-void Planner::init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals)
+void Planner::init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, vector<double> next_x_vals, vector<double> next_y_vals)
 {
   is_initialized = true; 
 }

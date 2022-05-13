@@ -2,6 +2,7 @@
 #define PLANNER_H_
 #include <vector>
 #include "Planner.h"
+#include "Path.h"
 #include "json.hpp"
 
 
@@ -26,7 +27,7 @@ class Planner {
 	// Flag, if filter is initialized
     bool is_initialized;
 
- 	void init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, double dist_inc, vector<double> next_x_vals, vector<double> next_y_vals);
+ 	void init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, vector<double> next_x_vals, vector<double> next_y_vals);
     
     int getLane(double d0);
     
