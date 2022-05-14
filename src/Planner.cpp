@@ -4,6 +4,7 @@
 #include <math.h>
 #include "WayPoint.h"
 #include "Planner.h"
+#include "Path.h"
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "Eigen-3.3/Eigen/LU"
@@ -25,7 +26,7 @@ Planner::Planner() {}
 Planner::~Planner() {}
 
 
-void Planner::init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, vector<double> next_x_vals, vector<double> next_y_vals)
+void Planner::init(double dist_inc, Path highway)
 {
   is_initialized = true; 
 }
@@ -60,12 +61,12 @@ void Planner::set_planner_path(vector<double> x,vector<double> y,vector<double> 
 
 void Planner::get_localization_data(double x,double y, double s, double d,double yaw,double speed) 
 {  
-  double car_x = x;
-  double car_y = y;
-  double car_s = s;
-  double car_d = d;
-  double car_yaw = yaw;
-  double car_speed = speed;
+  car_x = x;
+  car_y = y;
+  car_s = s;
+  car_d = d;
+  car_yaw = yaw;
+  car_speed = speed;
 }
 
 void Planner::previous_path_data(const vector<double> &x,const vector<double> &y, double prev_s, double prev_d) 

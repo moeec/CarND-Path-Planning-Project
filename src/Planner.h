@@ -27,7 +27,7 @@ class Planner {
 	// Flag, if filter is initialized
     bool is_initialized;
 
- 	void init(bool RightLaneClearCheck, bool LeftLaneClearCheck, bool ThisLaneClearCheck, vector<double> next_x_vals, vector<double> next_y_vals);
+ 	void init(double dist, Path hightway);
     
     int getLane(double d0);
     
@@ -42,9 +42,19 @@ class Planner {
     vector<double> get_x_values(); 
 
     vector<double> get_y_values(); 
-    
-
   
+    double car_x;
+  
+    double car_y;
+  
+    double car_s;
+  
+    double car_d;
+  
+    double car_yaw;
+  
+    double car_speed;
+    
   
   private:
 

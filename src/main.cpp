@@ -125,19 +125,23 @@ int main() {
           double dist_inc = 0.5;
           
           Path highway;
+          Planner present_path;
           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
-          Planner present_path;  
-          std::cout<<car_yaw;
-          Planner planner_s;
-          planner_s.init(RightLaneClearCheck, LeftLaneClearCheck, ThisLaneClearCheck, next_x_vals, next_y_vals);  
+           
           
+          
+          std::cout<<car_yaw;
+          present_path.init(dist_inc,highway);
+          present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
+          
+          present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
+                    
          for (int i = 0; i < 50; ++i) 
          {
            next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
            next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
          }
-
-                   
+          
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
@@ -145,7 +149,9 @@ int main() {
 
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }  // end "telemetry" if
-      } else {
+      } 
+      else 
+      {
         // Manual driving
         std::string msg = "42[\"manual\",{}]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
