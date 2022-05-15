@@ -24,10 +24,10 @@ class Planner {
    */
   virtual ~Planner();
   
-	// Flag, if filter is initialized
+    // Flag, if filter is initialized
     bool is_initialized;
 
- 	void init(double dist, Path hightway);
+    void init(double dist, Path hightway);
     
     int getLane(double d0);
     
@@ -59,7 +59,15 @@ class Planner {
     
     double end_d;
   
-    void populate_path_w_traffic(vector<vector<double>> sensor_fusion);
+    vector<double> previous_path_x;
+  
+    vector<double> previous_path_y;
+  
+    void populate_path_w_traffic(vector<double> sensor_fusion);
+  
+    double max_velocity = 50 * 1.6 * 1000 / 3600; // Maximim speed of 50 miles in m/s
+  
+    Path highway;
   
     
   

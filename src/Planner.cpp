@@ -5,6 +5,7 @@
 #include "WayPoint.h"
 #include "Planner.h"
 #include "Path.h"
+#include "Vehicle.h"
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "Eigen-3.3/Eigen/LU"
@@ -87,26 +88,24 @@ vector<double> Planner::get_y_values()
   return next_y_vals;  
 }
 
-void Planner::populate_path_w_traffic(vector<vector<double>> sensor_fusion)
+void Planner::populate_path_w_traffic(vector<double> sensor_fusion)
 {
+  
+  
+
   double pcar_x = car_x;
   double pcar_y = car_y;
   double p_yaw; 
   double p_velocity;
   double p_accl=0.0;
   double p_max_accl = 3;
+  int previous_path_size = previous_path_x.size();
 
   vector<double> x_pts;
   vector<double> y_pts;
+   
   
-  bool data_present = 0;
-  
-  if (sensor_fusion.empty() !=1)
-  {
-    data_present = 1;
-  }
-  
-  if (data_present==0)
+  if (previous_path_size==0)
   {
     pcar_x = car_x;
     pcar_y = car_y;
@@ -115,9 +114,9 @@ void Planner::populate_path_w_traffic(vector<vector<double>> sensor_fusion)
     p_yaw = (car_yaw) * M_PI / 180;
     p_accl = 0.0;
   }
-  else
+  
+  if (previous_path_size<2)
   {
-    
      x_pts.push_back(car_x - cos(car_yaw));
      y_pts.push_back(car_y - sin(car_yaw));
      x_pts.push_back(car_x);
@@ -126,5 +125,55 @@ void Planner::populate_path_w_traffic(vector<vector<double>> sensor_fusion)
      p_velocity = 0;
      p_accl=0;
      p_accl = 2;
+  }
+  else
+  {
+    pcar_x = previous_path_x[previous_path_size -1];
+    pcar_y = previous_path_y[previous_path_size -1];
+    double reference_x_1 = previous_path_x[previous_path_size -2];
+    double reference_y_1 = previous_path_y[previous_path_size -2];
+    p_yaw = atan2(pcar_y - reference_y_1, pcar_x - reference_x_1);
+
+    x_pts.push_back(reference_x_1);
+    x_pts.push_back(pcar_x);
+
+    y_pts.push_back(reference_y_1);
+    y_pts.push_back(pcar_y);
+
+    p_velocity = sqrt((x_pts[1]-x_pts[0] ) * (x_pts[1]-x_pts[0]) +  (y_pts[1]-y_pts[0]) * (y_pts[1]-y_pts[0])) / 0.02;
+
+    p_accl = (p_velocity - (car_speed/2.24)) / previous_path_size;
    }
+  
+    Vehicle ego_vehicle(2, end_s, p_velocity, p_accl,"KL");
+ 
+    predict(end_s, previous_path_size, sensor_fusion);
+  
+    int old_lane = ego_vehicle.lane;
+    vector<Vehicle> Vehicle_state; 
+
+    highway.calculate_map_XYspline_for_s(end_s, old_lane - ego_vehicle.lane, x_pts, x_pts, p_yaw, ego_vehicle.lane);
+
+  
+    double x_estimate = 30;
+    double y_estimate = highway.get_y_from_curve(x_estimate);
+    double dist_estimate = sqrt(x_estimate * x_estimate + y_estimate * y_estimate);
+
+    p_velocity = 	ego_vehicle.v;
+    
+    
+    double n_dist_inc = dist_estimate / (0.02*p_velocity);
+    double dist_inc_x = x_estimate / n_dist_inc;
+    double x_pt = 0;
+    double y_pt;
+    
+    for(int i = 1; i<= 50 - previous_path_size; i++)
+    {
+      x_pt += dist_inc_x;
+      y_pt = highway.get_y_from_curve(x_pt);
+      
+      next_x_vals.push_back(pcar_x + (x_pt * cos(p_yaw)  - y_pt * sin(p_yaw)));
+      next_y_vals.push_back(pcar_y + (x_pt * sin(p_yaw)  + y_pt * cos(p_yaw)));
+    }
+
 }
