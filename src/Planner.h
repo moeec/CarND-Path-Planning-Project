@@ -54,6 +54,13 @@ class Planner {
     double car_yaw;
   
     double car_speed;
+  
+    double end_s;
+    
+    double end_d;
+  
+    void populate_path_w_traffic(vector<vector<double>> sensor_fusion);
+  
     
   
   private:

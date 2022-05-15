@@ -79,11 +79,11 @@ int main() {
         
         string event = j[0].get<string>();
         
-        std::cout <<"j[0] ";
-        std::cout <<j[0];
-        std::cout << "event has ";
-        std::cout <<event;
-        std::cout <<"end of event";
+        //std::cout <<"j[0] ";
+        //std::cout <<j[0];
+        //std::cout << "event has ";
+        //std::cout <<event;
+        //std::cout <<"end of event";
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
@@ -95,12 +95,12 @@ int main() {
           double car_d = j[1]["d"];
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
-          std::cout << "|car_x|";
-          std::cout <<j[1]["|x|"];
-          std::cout << "|car_y|";
-          std::cout <<j[1]["|y|"];
-          std::cout <<"|all J|";
-          std::cout <<j;
+          //std::cout << "|car_x|";
+          //std::cout <<j[1]["|x|"];
+         // std::cout << "|car_y|";
+         // std::cout <<j[1]["|y|"];
+          //std::cout <<"|all J|";
+         // std::cout <<j;
           
           
           
@@ -130,17 +130,19 @@ int main() {
            
           
           
-          std::cout<<car_yaw;
+          std::cout<<sensor_fusion;
           present_path.init(dist_inc,highway);
           present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
           
           present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
+          present_path.populate_path_w_traffic(sensor_fusion);
+              
                     
-         for (int i = 0; i < 50; ++i) 
+        /* for (int i = 0; i < 50; ++i) 
          {
            next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
            next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
-         }
+         }*/
           
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;

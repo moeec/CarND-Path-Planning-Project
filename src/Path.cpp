@@ -226,5 +226,3 @@ double Path::Poly_eval_JMT(vector<double> coeff, double t)
 	
 }
 
-
-

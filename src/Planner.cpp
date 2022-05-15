@@ -87,3 +87,44 @@ vector<double> Planner::get_y_values()
   return next_y_vals;  
 }
 
+void Planner::populate_path_w_traffic(vector<vector<double>> sensor_fusion)
+{
+  double pcar_x = car_x;
+  double pcar_y = car_y;
+  double p_yaw; 
+  double p_velocity;
+  double p_accl=0.0;
+  double p_max_accl = 3;
+
+  vector<double> x_pts;
+  vector<double> y_pts;
+  
+  bool data_present = 0;
+  
+  if (sensor_fusion.empty() !=1)
+  {
+    data_present = 1;
+  }
+  
+  if (data_present==0)
+  {
+    pcar_x = car_x;
+    pcar_y = car_y;
+    end_s = car_s;
+    end_d = car_d;
+    p_yaw = (car_yaw) * M_PI / 180;
+    p_accl = 0.0;
+  }
+  else
+  {
+    
+     x_pts.push_back(car_x - cos(car_yaw));
+     y_pts.push_back(car_y - sin(car_yaw));
+     x_pts.push_back(car_x);
+     y_pts.push_back(car_y);
+
+     p_velocity = 0;
+     p_accl=0;
+     p_accl = 2;
+   }
+}
