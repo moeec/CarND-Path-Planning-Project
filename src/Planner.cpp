@@ -6,6 +6,10 @@
 #include "Planner.h"
 #include "Path.h"
 #include "Vehicle.h"
+#include "WayPoint.h"
+//#include "helpers.h"
+#include "helpersplanner.h"
+#include "json.hpp"
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "Eigen-3.3/Eigen/LU"
@@ -31,6 +35,7 @@ void Planner::init(double dist_inc, Path highway)
 {
   is_initialized = true; 
 }
+
 
 int Planner::getLane(double d0) 
 {
@@ -88,92 +93,138 @@ vector<double> Planner::get_y_values()
   return next_y_vals;  
 }
 
-void Planner::populate_path_w_traffic(vector<double> sensor_fusion)
+void Planner::populate_path_w_traffic(int lane, vector<double> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy)
 {
-  
-  
 
-  double pcar_x = car_x;
-  double pcar_y = car_y;
-  double p_yaw; 
-  double p_velocity;
-  double p_accl=0.0;
-  double p_max_accl = 3;
+  vector<double> ptsx;
+  vector<double> ptsy;
+  
+  ref_vel = 49.5;
+  double ref_yaw;
+  double ref_x = car_x;
+  double ref_y = car_y;
+  
+  ref_yaw = (car_yaw*3.14159265359)/180;
+  
+  // Take in size of previous run
   int previous_path_size = previous_path_x.size();
-
-  vector<double> x_pts;
-  vector<double> y_pts;
-   
-  
-  if (previous_path_size==0)
-  {
-    pcar_x = car_x;
-    pcar_y = car_y;
-    end_s = car_s;
-    end_d = car_d;
-    p_yaw = (car_yaw) * M_PI / 180;
-    p_accl = 0.0;
-  }
-  
+ 
   if (previous_path_size<2)
   {
-     x_pts.push_back(car_x - cos(car_yaw));
-     y_pts.push_back(car_y - sin(car_yaw));
-     x_pts.push_back(car_x);
-     y_pts.push_back(car_y);
-
-     p_velocity = 0;
-     p_accl=0;
-     p_accl = 2;
+    double prev_car_x = car_x - cos(car_yaw);
+    double prev_car_y = car_y - sin(car_yaw);
+    
+    ptsx.push_back(prev_car_x);
+    ptsx.push_back(car_x);
+        
+    ptsy.push_back(prev_car_y);
+    ptsy.push_back(car_y);
   }
   else
   {
-    pcar_x = previous_path_x[previous_path_size -1];
-    pcar_y = previous_path_y[previous_path_size -1];
-    double reference_x_1 = previous_path_x[previous_path_size -2];
-    double reference_y_1 = previous_path_y[previous_path_size -2];
-    p_yaw = atan2(pcar_y - reference_y_1, pcar_x - reference_x_1);
-
-    x_pts.push_back(reference_x_1);
-    x_pts.push_back(pcar_x);
-
-    y_pts.push_back(reference_y_1);
-    y_pts.push_back(pcar_y);
-
-    p_velocity = sqrt((x_pts[1]-x_pts[0] ) * (x_pts[1]-x_pts[0]) +  (y_pts[1]-y_pts[0]) * (y_pts[1]-y_pts[0])) / 0.02;
-
-    p_accl = (p_velocity - (car_speed/2.24)) / previous_path_size;
-   }
+    ref_x = previous_path_x[previous_path_size -1];
+    ref_y = previous_path_y[previous_path_size -1];
+    double ref_x_prev = previous_path_x[previous_path_size -2];
+    double ref_y_prev = previous_path_y[previous_path_size -2];
+    ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
+    
+    ptsx.push_back(ref_x_prev);
+    ptsx.push_back(ref_x);
+        
+    ptsy.push_back(ref_y_prev);
+    ptsy.push_back(ref_y);
+  }
   
-    Vehicle ego_vehicle(2, end_s, p_velocity, p_accl,"KL");
+  double s_wp0 = car_s+30; 
+  double d_wp0 = (2+4)*lane;
+  double s_wp1 = car_s+60; 
+  double d_wp1 = (2+4)*lane;
+  double s_wp2 = car_s+90; 
+  double d_wp2 = (2+4)*lane;
+
+  
+  //in Frenet add envenly 30m spaced points ahead of teh starting reference
+  //vector<double> next_wp0 = getXY(car_s+30,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
+  //vector<double> next_wp1 = getXY(car_s+60,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
+  //vector<double> next_wp2 = getXY(car_s+90,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
+  
+  vector<double> next_wp0 = getXY3(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+  vector<double> next_wp1 = getXY3(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+  vector<double> next_wp2 = getXY3(s_wp2, d_wp2, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+  
+  
+
+  
+  ptsx.push_back(next_wp0[0]);
+  ptsx.push_back(next_wp1[0]);
+  ptsx.push_back(next_wp2[0]);
+  
+  ptsy.push_back(next_wp0[0]);
+  ptsy.push_back(next_wp1[0]);
+  ptsy.push_back(next_wp2[0]);
+  
+  for(int i = 0; i < ptsx.size(); i++)
+  {
+    //shift car refernece to angle to 0 degrees
+    double shift_x = ptsx[i]-ref_x;
+    double shift_y = ptsx[i]-ref_y;
+    
+    ptsx[i] = (shift_x *cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
+    ptsy[i] = (shift_x *sin(0-ref_yaw)-shift_y*cos(0-ref_yaw)); 
+               
+  }
+               
+  // Spline created!
+  tk::spline s;
+  // setting (x,y) points to spline
+  s.set_points(ptsx,ptsy);
+  
  
-    predict(end_s, previous_path_size, sensor_fusion);
+                  
+  for(int i = 0; i < previous_path_size; i++)
+  { 
+      next_x_vals.push_back(previous_path_x[i]);
+      next_y_vals.push_back(previous_path_y[i]);
+  }
+               
+  double target_x = 30.0;
+  double target_y = s(target_x);
+  double target_dist = sqrt((target_x)+(target_y)*(target_y));
   
-    int old_lane = ego_vehicle.lane;
-    vector<Vehicle> Vehicle_state; 
-
-    highway.calculate_map_XYspline_for_s(end_s, old_lane - ego_vehicle.lane, x_pts, x_pts, p_yaw, ego_vehicle.lane);
-
+  double x_add_on = 0;
   
-    double x_estimate = 30;
-    double y_estimate = highway.get_y_from_curve(x_estimate);
-    double dist_estimate = sqrt(x_estimate * x_estimate + y_estimate * y_estimate);
-
-    p_velocity = 	ego_vehicle.v;
+  // will fix later
+  double ref_vel = 0.964;
+               
+  // Fill up the rest of our path planner after filling it from previous points, here we will always ouput 50 points (ud)
+  for(int i = 1; i<= 50 - previous_path_size;i++)
+  {
+    double N = (target_dist/(.02*ref_vel/2.24));
+    double x_point = x_add_on+(target_x)/N;
+    double y_point = s(x_point);
     
+    x_add_on = x_point;
     
-    double n_dist_inc = dist_estimate / (0.02*p_velocity);
-    double dist_inc_x = x_estimate / n_dist_inc;
-    double x_pt = 0;
-    double y_pt;
+    double x_ref = x_point;
+    double y_ref = y_point;
     
-    for(int i = 1; i<= 50 - previous_path_size; i++)
-    {
-      x_pt += dist_inc_x;
-      y_pt = highway.get_y_from_curve(x_pt);
-      
-      next_x_vals.push_back(pcar_x + (x_pt * cos(p_yaw)  - y_pt * sin(p_yaw)));
-      next_y_vals.push_back(pcar_y + (x_pt * sin(p_yaw)  + y_pt * cos(p_yaw)));
-    }
-
+// rotating back to normal after earlier rotattion
+  
+    x_point = (x_ref *cos(ref_yaw)-y_ref*sin(ref_yaw));
+    y_point = (x_ref *sin(ref_yaw)+y_ref*cos(ref_yaw));
+    x_point += ref_x;
+    y_point += ref_y;
+    
+    next_x_vals.push_back(x_point);
+    next_y_vals.push_back(y_point);
+  }
+  
+  json msgJson_to_send;
+  
+  msgJson_to_send["next_x"] = next_x_vals;
+  msgJson_to_send["next_y"] = next_y_vals;               
 }
+               
+    
+
+        

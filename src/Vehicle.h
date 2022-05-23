@@ -12,11 +12,17 @@ using std::vector;
 class Vehicle 
 {
  public:
-  // Constructors
-  Vehicle();
-  Vehicle(int lane, float s, float v, float a, string state="CS");
 
-  // Destructor
+ /**
+  * Constructor
+ */
+
+  Vehicle();
+  Vehicle(int identifier, int lane, float s, float v, float a, string state="CS");
+  Vehicle(int l, int s, int lane_speed, int something);
+ /**
+  * Destructor
+ */
   virtual ~Vehicle();
 
   // Vehicle functions
@@ -49,6 +55,9 @@ class Vehicle
   void realize_next_state(vector<Vehicle> &trajectory);
 
   void configure(vector<int> &road_data);
+  
+  int ID;
+
 
   // public Vehicle variables
   struct collider
@@ -66,7 +75,7 @@ class Vehicle
 
   int lane, s, goal_lane, goal_s, lanes_available;
 
-  float v, target_speed, a, max_acceleration;
+  float v, target_speed, a, max_acceleration, d;
 
   string state;
 };

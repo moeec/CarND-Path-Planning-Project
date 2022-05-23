@@ -62,6 +62,10 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
   
+  //starting in lane 1
+  int lane = 1;
+
+  
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
@@ -127,25 +131,40 @@ int main() {
           Path highway;
           Planner present_path;
           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
-           
+
           
-          
-          std::cout<<sensor_fusion;
+          //std::cout<<"just before sensor fusion";
+    
+          //std::cout<<"just after sensor fusion";
           present_path.init(dist_inc,highway);
           present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
           
           present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
-          present_path.populate_path_w_traffic(sensor_fusion);
+          present_path.populate_path_w_traffic(1, sensor_fusion, map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
+          
+         
               
                     
-        /* for (int i = 0; i < 50; ++i) 
-         {
-           next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
-           next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
-         }*/
+          //for (int i = 0; i < 50; ++i)
+          //{
+          //next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
+           //next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
+          //}
           
+
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
+          
+          
+          for (size_t i = 0; i < next_x_vals.size(); ++i) 
+          {
+            std::cout <<"next_x_vals";
+            std::cout << next_x_vals[i] << "; ";
+            std::cout <<"next_y_vals";
+            std::cout << next_y_vals[i] << "; ";
+          }
+         
+         
 
           auto msg = "42[\"control\","+ msgJson.dump()+"]";
 

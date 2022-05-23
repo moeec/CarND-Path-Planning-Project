@@ -1,6 +1,7 @@
 #ifndef PLANNER_H_
 #define PLANNER_H_
 #include <vector>
+#include <math.h>
 #include "Planner.h"
 #include "Path.h"
 #include "json.hpp"
@@ -59,15 +60,22 @@ class Planner {
     
     double end_d;
   
+    double ref_vel;
+  
+    int lane;
+  
     vector<double> previous_path_x;
   
     vector<double> previous_path_y;
   
-    void populate_path_w_traffic(vector<double> sensor_fusion);
+    void populate_path_w_traffic(int lane, vector<double> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy);
   
     double max_velocity = 50 * 1.6 * 1000 / 3600; // Maximim speed of 50 miles in m/s
   
     Path highway;
+  
+    double pi =  M_PI; 
+
   
     
   

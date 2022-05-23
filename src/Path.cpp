@@ -2,6 +2,7 @@
 #include <math.h>
 #include "Path.h"
 #include "spline.h"
+#include "Path.h"
 #include "helperspath.h"
 #include <string>
 #include <iostream>
