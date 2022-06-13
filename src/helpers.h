@@ -39,7 +39,7 @@ double rad2deg(double x)
 }
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY2(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y) 
+vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y) 
 {
   int prev_wp = -1;
 
@@ -64,6 +64,5 @@ vector<double> getXY2(double s, double d, const vector<double> &maps_s, const ve
 
   return {x,y};
 }
-
 
 #endif  // HELPERS_H

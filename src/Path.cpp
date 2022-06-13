@@ -1,9 +1,8 @@
 #include <vector>
 #include <math.h>
 #include "Path.h"
-#include "spline.h"
-#include "Path.h"
 #include "helperspath.h"
+#include "spline.h"
 #include <string>
 #include <iostream>
 #include "Eigen-3.3/Eigen/Core"
@@ -28,19 +27,21 @@ void Path::Init_cloudpoints(Path map_points)
   
 }
 
-void Path::set_map_path_data(vector<double> x,vector<double> y,vector<double> s,vector<double> dx, vector<double> dy ) 
+void Path::set_map_path_data(vector<double> x,vector<double> y,vector<double> s,vector<double> dx, vector<double> dy, vector<WayPoint>  points_group ) 
 {
+  
+  vector<WayPoint> points_group_in;
 // store the map data in a object variable  points_group  
   for (int i = 0; i < x.size(); ++i)
     
   {  
 	  WayPoint w_p(x[i],y[i],s[i],dx[i],dy[i]);
-	  points_group.push_back(w_p);  
+	  points_group_in.push_back(w_p);  
   }
 }
 
 
-void Path::calculate_map_XYspline_for_s(double s_val, int d_val,vector<double> &prev_pts_x, vector<double> &prev_pts_y, double ref_yaw,int lane)   
+void Path::calculate_map_XYspline_for_s(double s_val, int d_val,vector<double> &prev_pts_x, vector<double> &prev_pts_y, double ref_yaw,int lane, vector<WayPoint>  points_group )   
 {
 	 
 	 // This function isolates a part of the map starting from current position of car to about 90 m.
@@ -68,16 +69,16 @@ void Path::calculate_map_XYspline_for_s(double s_val, int d_val,vector<double> &
 	 if (d_val !=0 )
      {
 	  // Case : Lane change is observed. Start spline at 50 m from current position	 
-	  XY_1 = getXY(s_val+50, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
-	  XY_2 = getXY(s_val+65, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
-	  XY_3 = getXY(s_val+80, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	  XY_1 = path_getXY(s_val+50, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	  XY_2 = path_getXY(s_val+65, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+	  XY_3 = path_getXY(s_val+80, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
 	 }
 	 else 
      {
 		 // Case : No Lane change. Start spline at 30 m from current position till 90 m
-		  XY_1 = getXY(s_val+30, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
-		  XY_2 = getXY(s_val+60, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
-		  XY_3 = getXY(s_val+90, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+		  XY_1 = path_getXY(s_val+30, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+		  XY_2 = path_getXY(s_val+60, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
+		  XY_3 = path_getXY(s_val+90, 2 + 4 * (lane - 1) , s_vect, x_vect, y_vect);
 	 }
 	 
 	 
@@ -167,27 +168,7 @@ double Path::get_y_from_curve(double x)
 	return xy_curve(x);
 }
 
-
-
-WayPoint Path::get_map_convertedS_for_XY(double x_val, double y_val, double theta) 
-{
-	/* Return s,d value for a X ,Y.This function is not used */ 
-	 vector<double> x_vect;
-	 vector<double> y_vect;
-
-	 for (WayPoint wp:points_group) 
-     {
-	  x_vect.push_back(wp.get_x_co());
-	  y_vect.push_back(wp.get_y_co());
-	 }
-
-     vector<double>  SD = getFrenet(x_val,y_val,theta,x_vect,y_vect);
-
-	 WayPoint wp( x_val, y_val, SD[0], SD[1]);
-	 return(wp);
-}
-
-vector<WayPoint> Path::get_map_convertedSD_for_XY_jerk_optimised(vector<double> &s_start,vector<double> &s_end, vector<double> &d_start, vector<double> &d_end, double start_time, double end_time, double inc) 
+vector<WayPoint> Path::get_map_convertedSD_for_XY_jerk_optimised(vector<double> &s_start,vector<double> &s_end, vector<double> &d_start, vector<double> &d_end, double start_time, double end_time, double inc, vector<WayPoint>  points_group) 
 {
 	 /* this function calculates Jerk optimised trajectory on s - d coordinates. Not used */
 	 vector<double> x_vect;
@@ -208,11 +189,11 @@ vector<WayPoint> Path::get_map_convertedSD_for_XY_jerk_optimised(vector<double> 
 	 double s_val,d_val;
 	 double d_x, d_y;
 	
-  while(running_time < (start_time + end_time) )
+     while(running_time < (start_time + end_time) )
      {	
 		s_val=Poly_eval_JMT(coeff_s,running_time);
 		d_val=Poly_eval_JMT(coeff_d,running_time);
-		vector<double>  XY = getXY(s_val, d_val, s_vect, x_vect, y_vect);
+		vector<double>  XY = path_getXY(s_val, d_val, s_vect, x_vect, y_vect);
 	    pts_jerk_optimised.push_back(WayPoint( XY[0], XY[1], s_val, d_val)); 
 		running_time += inc;
 	 }
@@ -224,6 +205,5 @@ double Path::Poly_eval_JMT(vector<double> coeff, double t)
 {
 	/* return coefficient of polynomial*/
 	return (coeff[0] + coeff[1] * t + coeff[2] * pow(t,2) + coeff[3] * pow(t,3) + coeff[4] * pow(t,4) + coeff[5] * pow(t,5));
-	
 }
 

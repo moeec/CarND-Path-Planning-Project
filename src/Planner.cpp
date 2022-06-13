@@ -2,13 +2,12 @@
 #include <vector>
 #include <numeric>
 #include <math.h>
-#include "WayPoint.h"
+//#include "WayPoint.h"
 #include "Planner.h"
-#include "Path.h"
-#include "Vehicle.h"
-#include "WayPoint.h"
-//#include "helpers.h"
 #include "helpersplanner.h"
+//#include "Path.h"
+//#include "Vehicle.h"
+//#include "WayPoint.h"
 #include "json.hpp"
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
@@ -35,7 +34,6 @@ void Planner::init(double dist_inc, Path highway)
 {
   is_initialized = true; 
 }
-
 
 int Planner::getLane(double d0) 
 {
@@ -148,12 +146,9 @@ void Planner::populate_path_w_traffic(int lane, vector<double> sensor_fusion, ve
   //vector<double> next_wp1 = getXY(car_s+60,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
   //vector<double> next_wp2 = getXY(car_s+90,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
   
-  vector<double> next_wp0 = getXY3(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
-  vector<double> next_wp1 = getXY3(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
-  vector<double> next_wp2 = getXY3(s_wp2, d_wp2, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
-  
-  
-
+  vector<double> next_wp0 = planner_getXY(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+  vector<double> next_wp1 = planner_getXY(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+  vector<double> next_wp2 = planner_getXY(s_wp2, d_wp2, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
   
   ptsx.push_back(next_wp0[0]);
   ptsx.push_back(next_wp1[0]);
@@ -219,12 +214,10 @@ void Planner::populate_path_w_traffic(int lane, vector<double> sensor_fusion, ve
     next_y_vals.push_back(y_point);
   }
   
+  
   json msgJson_to_send;
   
   msgJson_to_send["next_x"] = next_x_vals;
   msgJson_to_send["next_y"] = next_y_vals;               
 }
-               
-    
-
-        
+ 

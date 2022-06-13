@@ -39,36 +39,25 @@ class Planner {
     void get_localization_data(double x,double y, double s, double d,double yaw,double speed);
     
     void previous_path_data(const vector<double> &x,const vector<double> &y, double prev_s, double prev_d);
-    
-    vector<double> get_x_values(); 
-
-    vector<double> get_y_values(); 
-  
-    double car_x;
-  
-    double car_y;
-  
-    double car_s;
-  
-    double car_d;
-  
-    double car_yaw;
-  
-    double car_speed;
-  
-    double end_s;
-    
-    double end_d;
-  
-    double ref_vel;
-  
-    int lane;
-  
-    vector<double> previous_path_x;
-  
-    vector<double> previous_path_y;
   
     void populate_path_w_traffic(int lane, vector<double> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy);
+  
+    int lane = 1;
+  
+    vector<WayPoint> points_group;
+    vector<double> get_x_values(); 
+    vector<double> get_y_values(); 
+    double car_x;
+    double car_y;
+    double car_s;
+    double car_d;
+    double car_yaw;  
+    double car_speed;
+    double end_s;
+    double end_d;
+    double ref_vel;
+    vector<double> previous_path_x;
+    vector<double> previous_path_y;
   
     double max_velocity = 50 * 1.6 * 1000 / 3600; // Maximim speed of 50 miles in m/s
   

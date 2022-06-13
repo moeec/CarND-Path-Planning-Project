@@ -11,7 +11,7 @@ using std::vector;
 
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY3(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y) 
+vector<double> planner_getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y) 
 {
   int prev_wp = -1;
 
