@@ -91,9 +91,11 @@ vector<double> Planner::get_y_values()
   return next_y_vals;  
 }
 
-void Planner::populate_path_w_traffic(int lane, vector<double> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy)
+void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy)
 {
 
+  
+  std::cout <<"here in planner at beginning og populate...";
   vector<double> ptsx;
   vector<double> ptsy;
   
@@ -139,12 +141,6 @@ void Planner::populate_path_w_traffic(int lane, vector<double> sensor_fusion, ve
   double d_wp1 = (2+4)*lane;
   double s_wp2 = car_s+90; 
   double d_wp2 = (2+4)*lane;
-
-  
-  //in Frenet add envenly 30m spaced points ahead of teh starting reference
-  //vector<double> next_wp0 = getXY(car_s+30,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
-  //vector<double> next_wp1 = getXY(car_s+60,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
-  //vector<double> next_wp2 = getXY(car_s+90,(2+4)*lane)+(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
   
   vector<double> next_wp0 = planner_getXY(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
   vector<double> next_wp1 = planner_getXY(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
@@ -216,7 +212,7 @@ void Planner::populate_path_w_traffic(int lane, vector<double> sensor_fusion, ve
   
   
   json msgJson_to_send;
-  
+  std::cout <<"here in planner at end";
   msgJson_to_send["next_x"] = next_x_vals;
   msgJson_to_send["next_y"] = next_y_vals;               
 }

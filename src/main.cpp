@@ -244,7 +244,6 @@ int main() {
                uWS::OpCode opCode) {       // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
-    std::cout << "event has ";
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
       auto s = hasData(data);
@@ -302,10 +301,10 @@ int main() {
           double dist_inc = 0.5;
           
           
-          std::cout<<"just before sensor fusion parts";
           Path highway;
           Planner present_path;
           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy, points_group );
+          
 
           
           //std::cout<<"just before sensor fusion";
@@ -316,19 +315,9 @@ int main() {
           
           present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
           
+          std::cout << "here before present_path.populate_path_w_traffic";
           present_path.populate_path_w_traffic(1, sensor_fusion, map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
-          
-          //msgJson["next_x"] = present_path.get_x_values();
-          //msgJson["next_y"] = present_path.get_y_values();
-         
-              
-                    
-          //for (int i = 0; i < 50; ++i)
-          //{
-          //next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
-           //next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
-          //}
-          
+          std::cout << "here after  present_path.populate_path_w_traffic";
 
           
           std::cout <<"here1";
