@@ -2,12 +2,8 @@
 #include <vector>
 #include <numeric>
 #include <math.h>
-//#include "WayPoint.h"
 #include "Planner.h"
 #include "helpersplanner.h"
-//#include "Path.h"
-//#include "Vehicle.h"
-//#include "WayPoint.h"
 #include "json.hpp"
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
@@ -91,11 +87,10 @@ vector<double> Planner::get_y_values()
   return next_y_vals;  
 }
 
-void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy)
+json Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy)
 {
 
   
-  std::cout <<"here in planner at beginning og populate...";
   vector<double> ptsx;
   vector<double> ptsy;
   
@@ -108,9 +103,11 @@ void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
   
   // Take in size of previous run
   int previous_path_size = previous_path_x.size();
- 
+  
+  // a close to empty previous path
   if (previous_path_size<2)
   {
+    // Picking two previous points that are tangent to the acr 
     double prev_car_x = car_x - cos(car_yaw);
     double prev_car_y = car_y - sin(car_yaw);
     
@@ -120,6 +117,7 @@ void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
     ptsy.push_back(prev_car_y);
     ptsy.push_back(car_y);
   }
+  
   else
   {
     ref_x = previous_path_x[previous_path_size -1];
@@ -154,6 +152,7 @@ void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
   ptsy.push_back(next_wp1[0]);
   ptsy.push_back(next_wp2[0]);
   
+  // tranformation to local car co-ordinates, car reference angle to 0 degrees
   for(int i = 0; i < ptsx.size(); i++)
   {
     //shift car refernece to angle to 0 degrees
@@ -170,14 +169,14 @@ void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
   // setting (x,y) points to spline
   s.set_points(ptsx,ptsy);
   
- 
                   
   for(int i = 0; i < previous_path_size; i++)
   { 
       next_x_vals.push_back(previous_path_x[i]);
       next_y_vals.push_back(previous_path_y[i]);
   }
-               
+  
+  // breaking up of spline in order to meet desired speed
   double target_x = 30.0;
   double target_y = s(target_x);
   double target_dist = sqrt((target_x)+(target_y)*(target_y));
@@ -210,10 +209,9 @@ void Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
     next_y_vals.push_back(y_point);
   }
   
-  
   json msgJson_to_send;
-  std::cout <<"here in planner at end";
   msgJson_to_send["next_x"] = next_x_vals;
-  msgJson_to_send["next_y"] = next_y_vals;               
+  msgJson_to_send["next_y"] = next_y_vals;
+  return msgJson_to_send; 
 }
  
