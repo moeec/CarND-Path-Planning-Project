@@ -5,7 +5,9 @@
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
+#include "helpers.h"
 #include "json.hpp"
+
 #include "Planner.h"
 #include "WayPoint.h"
 #include "Path.h"
@@ -15,38 +17,51 @@ using nlohmann::json;
 using std::string;
 using std::vector;
 
-vector<WayPoint> points_group;
 
+vector<WayPoint> points_group;
 
 
 constexpr double pi() 
 { 
   return M_PI; 
 }
-
+// For converting between degrees and radians.
 double deg2rad(double x) 
 { 
   return x * pi() / 180; 
 }
-
+// For converting between radians and degrees.
 double rad2deg(double x) 
 { 
   return x * 180 / pi(); 
 }
 
-string hasData(string s) 
+// Transform from Frenet s,d coordinates to Cartesian x,y
+vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y) 
 {
-  auto found_null = s.find("null");
-  auto b1 = s.find_first_of("[");
-  auto b2 = s.find_first_of("}");
-  if (found_null != string::npos) 
+  int prev_wp = -1;
+
+  while (s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1))) 
   {
-    return "";
-  } else if (b1 != string::npos && b2 != string::npos) 
-  {
-    return s.substr(b1, b2 - b1 + 2);
+    ++prev_wp;
   }
-  return "";
+
+  int wp2 = (prev_wp+1)%maps_x.size();
+
+  double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),
+                         (maps_x[wp2]-maps_x[prev_wp]));
+  // the x,y,s along the segment
+  double seg_s = (s-maps_s[prev_wp]);
+
+  double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
+  double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
+
+  double perp_heading = heading-pi()/2;
+
+  double x = seg_x + d*cos(perp_heading);
+  double y = seg_y + d*sin(perp_heading);
+
+  return {x,y};
 }
 
 double distance(double x1, double y1, double x2, double y2) 
@@ -75,6 +90,7 @@ int ClosestWaypoint(double x, double y, const vector<double> &maps_x, const vect
   return closestWaypoint;
 }
 
+// Returns next waypoint of the closest waypoint
 int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y) 
 {
   int closestWaypoint = ClosestWaypoint(x,y,maps_x,maps_y);
@@ -85,10 +101,9 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
   double heading = atan2((map_y-y),(map_x-x));
 
   double angle = fabs(theta-heading);
-  angle = std::min(2*3.14159265359 - angle, angle);
+  angle = std::min(2*pi() - angle, angle);
 
-  if (angle > 3.14159265359/2) 
-  {
+  if (angle > pi()/2) {
     ++closestWaypoint;
     if (closestWaypoint == maps_x.size()) 
     {
@@ -98,6 +113,7 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
 
   return closestWaypoint;
 }
+
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
 vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y) 
 {
@@ -105,8 +121,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
   int prev_wp;
   prev_wp = next_wp-1;
-  if (next_wp == 0) 
-  {
+  if (next_wp == 0) {
     prev_wp  = maps_x.size()-1;
   }
 
@@ -135,8 +150,7 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
   // calculate s value
   double frenet_s = 0;
-  for (int i = 0; i < prev_wp; ++i) 
-  {
+  for (int i = 0; i < prev_wp; ++i) {
     frenet_s += distance(maps_x[i],maps_y[i],maps_x[i+1],maps_y[i+1]);
   }
 
@@ -145,52 +159,24 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
   return {frenet_s,frenet_d};
 }
 
-// Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y) 
+// Checks if the SocketIO event has JSON data.
+// If there is data the JSON object in string format will be returned,
+//   else the empty string "" will be returned.
+string hasData(string s) 
 {
-  int prev_wp = -1;
-
-  while (s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1))) 
+  auto found_null = s.find("null");
+  auto b1 = s.find_first_of("[");
+  auto b2 = s.find_first_of("}");
+  if (found_null != string::npos) 
   {
-    ++prev_wp;
+    return "";
+  } 
+  else if (b1 != string::npos && b2 != string::npos) 
+  {
+    return s.substr(b1, b2 - b1 + 2);
   }
-
-  int wp2 = (prev_wp+1)%maps_x.size();
-
-  double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
-  // the x,y,s along the segment
-  double seg_s = (s-maps_s[prev_wp]);
-
-  double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
-  double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
-
-  double perp_heading = heading-3.14159265359/2;
-
-  double x = seg_x + d*cos(perp_heading);
-  double y = seg_y + d*sin(perp_heading);
-
-  return {x,y};
+  return "";
 }
-
-WayPoint get_map_convertedS_for_XY(double x_val, double y_val, double theta)
-{
-	/* Return s,d value for a X ,Y.This function is not used */ 
-	 vector<double> x_vect;
-	 vector<double> y_vect;
-
-	 for (WayPoint wp:points_group) 
-     {
-	  x_vect.push_back(wp.get_x_co());
-	  y_vect.push_back(wp.get_y_co());
-	 }
-
-     vector<double>  SD = getFrenet(x_val,y_val,theta,x_vect,y_vect);
-
-	 WayPoint wp( x_val, y_val, SD[0], SD[1]);
-	 return(wp);
-}
-
-
 
 
 int main() {
@@ -207,16 +193,11 @@ int main() {
   string map_file_ = "../data/highway_map.csv";
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
-  
-  // Setting up instance of planner
-  //Planner planner;
-  
-  // Input stream class to operate take in "highway_map.csv
+
   std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
-  
+
   string line;
-  while (getline(in_map_, line)) 
-  {
+  while (getline(in_map_, line)) {
     std::istringstream iss(line);
     double x;
     double y;
@@ -232,16 +213,14 @@ int main() {
     map_waypoints_y.push_back(y);
     map_waypoints_s.push_back(s);
     map_waypoints_dx.push_back(d_x);
-    map_waypoints_dy.push_back(d_y);  
+    map_waypoints_dy.push_back(d_y);
   }
-  
-  //starting in lane 1
-
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-               uWS::OpCode opCode) {       // "42" at the start of the message means there's a websocket message event.
+               uWS::OpCode opCode) {
+    // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
@@ -252,13 +231,6 @@ int main() {
         auto j = json::parse(s);
         
         string event = j[0].get<string>();
-       
-        
-        //std::cout <<"j[0] ";
-        //std::cout <<j[0];
-        //std::cout << "event has ";
-        //std::cout <<event;
-        //std::cout <<"end of event";
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
@@ -270,15 +242,7 @@ int main() {
           double car_d = j[1]["d"];
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
-          //std::cout << "|car_x|";
-          //std::cout <<j[1]["|x|"];
-         // std::cout << "|car_y|";
-         // std::cout <<j[1]["|y|"];
-          //std::cout <<"|all J|";
-         // std::cout <<j;
-          
-          
-          
+
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
           auto previous_path_y = j[1]["previous_path_y"];
@@ -294,22 +258,13 @@ int main() {
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-          
-          bool RightLaneClearCheck; 
-          bool LeftLaneClearCheck; 
-          bool ThisLaneClearCheck;
           double dist_inc = 0.5;
-          
+
           
           Path highway;
           Planner present_path;
           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy, points_group );
-          
-
-          
-          //std::cout<<"just before sensor fusion";
-          
-          //std::cout<<"just after sensor fusion";
+                    
           present_path.init(dist_inc,highway);
           present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
           
@@ -318,27 +273,16 @@ int main() {
           std::cout << "here before present_path.populate_path_w_traffic";
           present_path.populate_path_w_traffic(1, sensor_fusion, map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
           std::cout << "here after  present_path.populate_path_w_traffic";
-
           
-          std::cout <<"here1";
-          for (size_t i = 0; i < next_x_vals.size(); ++i) 
-          {
-            std::cout <<"next_x_vals";
-            std::cout << next_x_vals[i] << "; ";
-            std::cout <<"next_y_vals";
-            std::cout << next_y_vals[i] << "; ";
-            std::cout <<"here2";
-          }
-          std::cout <<"here3";
-         
+
+          msgJson["next_x"] = next_x_vals;
+          msgJson["next_y"] = next_y_vals;
 
           auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }  // end "telemetry" if
-      } 
-      else 
-      {
+      } else {
         // Manual driving
         std::string msg = "42[\"manual\",{}]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
@@ -346,8 +290,7 @@ int main() {
     }  // end websocket if
   }); // end h.onMessage
 
-  h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) 
-  {
+  h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
     std::cout << "Connected!!!" << std::endl;
   });
 
