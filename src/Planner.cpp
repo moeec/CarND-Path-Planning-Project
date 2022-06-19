@@ -59,7 +59,7 @@ void Planner::set_planner_path(vector<double> x,vector<double> y,vector<double> 
   
 }
 
-void Planner::get_localization_data(double x,double y, double s, double d,double yaw,double speed) 
+void Planner::get_localization_data(double x, double y, double s, double d, double yaw, double speed) 
 {  
   car_x = x;
   car_y = y;
@@ -71,10 +71,10 @@ void Planner::get_localization_data(double x,double y, double s, double d,double
 
 void Planner::previous_path_data(const vector<double> &x,const vector<double> &y, double prev_s, double prev_d) 
 {  
-  vector<double> previous_x= x;
-  vector<double> previous_y = y;
-  double end_s = prev_s; 
-  double end_d = prev_d;
+  vector<double> previous_path_x = x;
+  vector<double> previous_path_y = y;
+  end_s = prev_s; 
+  end_d = prev_d;
 }
 
 vector<double> Planner::get_x_values() 
@@ -89,7 +89,6 @@ vector<double> Planner::get_y_values()
 
 json Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy)
 {
-
   
   vector<double> ptsx;
   vector<double> ptsy;
@@ -104,13 +103,21 @@ json Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
   // Take in size of previous run
   int previous_path_size = previous_path_x.size();
   
+  std::cout << "***LOOK HEREprevious_path_size = "<<previous_path_size<< "***\n";
+  
   // a close to empty previous path
   if (previous_path_size<2)
   {
     // Picking two previous points that are tangent to the acr 
+    std::cout << "car_x inside previous_path_size<2 car_x = "<<car_x<<"\n";
+    std::cout << "car_y inside previous_path_size<2 car_y = "<<car_y<<"\n";
+    std::cout << "car_yaw inside previous_path_size<2 car_yaw =  "<<car_yaw<<"\n";
+    std::cout << "cos(car_yaw)"<<cos(car_yaw)<<"\n";
+    
+    
     double prev_car_x = car_x - cos(car_yaw);
     double prev_car_y = car_y - sin(car_yaw);
-    
+    std::cout << "prev_car_x"<<prev_car_x<<"\n";
     ptsx.push_back(prev_car_x);
     ptsx.push_back(car_x);
         
@@ -120,11 +127,15 @@ json Planner::populate_path_w_traffic(int lane, vector<vector<double>> sensor_fu
   
   else
   {
+    
     ref_x = previous_path_x[previous_path_size -1];
     ref_y = previous_path_y[previous_path_size -1];
     double ref_x_prev = previous_path_x[previous_path_size -2];
     double ref_y_prev = previous_path_y[previous_path_size -2];
     ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
+    
+    std::cout << "ref_x inside else part of previous_path_size<2 ref_x = \n"<<ref_x;
+    std::cout << "ref_y inside else part of previous_path_size<2 ref_y = \n"<<ref_y;
     
     ptsx.push_back(ref_x_prev);
     ptsx.push_back(ref_x);
