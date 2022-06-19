@@ -7,7 +7,6 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
-
 #include "Planner.h"
 #include "WayPoint.h"
 #include "Path.h"
@@ -179,6 +178,7 @@ string hasData(string s)
 }
 
 
+
 int main() {
   uWS::Hub h;
 
@@ -259,20 +259,147 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           double dist_inc = 0.5;
-
-          
           Path highway;
           Planner present_path;
+          
           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy, points_group );
-                    
           present_path.init(dist_inc,highway);
           present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
-          
           present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
           
-          msgJson = present_path.populate_path_w_traffic(1, sensor_fusion, map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
-          std::cout << "here after present_path.populate_path_w_traffic";
+          vector<double> ptsx;
+          vector<double> ptsy;
+  
+          double ref_vel = 49.5;
+          int lane = 1;
+          double ref_yaw;
+          double ref_x = car_x;
+          double ref_y = car_y;
+  
+          ref_yaw = (car_yaw*pi())/180;
+  
+          // Take in size of previous run
+          int previous_path_size = previous_path_x.size();
+  
+          std::cout << "***previous_path_size = "<<previous_path_size<< "***\n";
+          
+          // a close to empty previous path
+          if (previous_path_size<2)
+          {
+            
+            // Picking two previous points that are tangent to the acr
+            std::cout << "car_x inside previous_path_size<2 car_x = "<<car_x<<"\n";
+            std::cout << "car_y inside previous_path_size<2 car_y = "<<car_y<<"\n";
+            std::cout << "car_yaw inside previous_path_size<2 car_yaw =  "<<car_yaw<<"\n";
+            std::cout << "cos(car_yaw)"<<cos(car_yaw)<<"\n";
+    
+           double prev_car_x = car_x - cos(car_yaw);
+           double prev_car_y = car_y - sin(car_yaw);
+           std::cout << "prev_car_x"<<prev_car_x<<"\n";
+           ptsx.push_back(prev_car_x);
+           ptsx.push_back(car_x);
+        
+           ptsy.push_back(prev_car_y);
+           ptsy.push_back(car_y);
+         }
+         else
+         {
+           ref_x = previous_path_x[previous_path_size -1];
+           ref_y = previous_path_y[previous_path_size -1];
+           double ref_x_prev = previous_path_x[previous_path_size -2];
+           double ref_y_prev = previous_path_y[previous_path_size -2];
+           ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
+    
+           std::cout << "ref_x inside else part of previous_path_size<2 ref_x = \n"<<ref_x;
+           std::cout << "ref_y inside else part of previous_path_size<2 ref_y = \n"<<ref_y;
+    
+           ptsx.push_back(ref_x_prev);
+           ptsx.push_back(ref_x);
+        
+           ptsy.push_back(ref_y_prev);
+           ptsy.push_back(ref_y);
+         }
+          
+         double s_wp0 = car_s+30; 
+         double d_wp0 = (2+4)*lane;
+         double s_wp1 = car_s+60; 
+         double d_wp1 = (2+4)*lane;
+         double s_wp2 = car_s+90; 
+         double d_wp2 = (2+4)*lane;
+  
+         vector<double> next_wp0 = getXY(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+         vector<double> next_wp1 = getXY(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+         vector<double> next_wp2 = getXY(s_wp2, d_wp2, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+  
+         ptsx.push_back(next_wp0[0]);
+         ptsx.push_back(next_wp1[0]);
+         ptsx.push_back(next_wp2[0]);
+  
+         ptsy.push_back(next_wp0[0]);
+         ptsy.push_back(next_wp1[0]);
+         ptsy.push_back(next_wp2[0]);
        
+          // tranformation to local car co-ordinates, car reference angle to 0 degrees
+         for(int i = 0; i < ptsx.size(); i++)
+         {
+           //shift car refernece to angle to 0 degrees
+           double shift_x = ptsx[i]-ref_x;
+           double shift_y = ptsx[i]-ref_y;
+    
+           ptsx[i] = (shift_x *cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
+           ptsy[i] = (shift_x *sin(0-ref_yaw)-shift_y*cos(0-ref_yaw)); 
+         }
+               
+         // Spline created!
+         tk::spline s;
+         // setting (x,y) points to spline
+         s.set_points(ptsx,ptsy);
+  
+                  
+        for(int i = 0; i < previous_path_size; i++)
+        {
+          next_x_vals.push_back(previous_path_x[i]);
+          next_y_vals.push_back(previous_path_y[i]);
+        }
+  
+        // breaking up of spline in order to meet desired speed
+        double target_x = 30.0;
+        double target_y = s(target_x);
+        double target_dist = sqrt((target_x)+(target_y)*(target_y));
+  
+        double x_add_on = 0;
+  
+        // will fix later
+        ref_vel = 0.964;
+               
+        // Fill up the rest of our path planner after filling it from previous points, here we will always ouput 50 points (ud)
+        
+        for(int i = 1; i<= 50 - previous_path_size;i++)
+        {
+          double N = (target_dist/(.02*ref_vel/2.24));
+          double x_point = x_add_on+(target_x)/N;
+          double y_point = s(x_point);
+    
+          x_add_on = x_point;
+    
+          double x_ref = x_point;
+          double y_ref = y_point;
+    
+          // rotating back to normal after earlier rotattion
+  
+          x_point = (x_ref *cos(ref_yaw)-y_ref*sin(ref_yaw));
+          y_point = (x_ref *sin(ref_yaw)+y_ref*cos(ref_yaw));
+    
+          x_point += ref_x;
+          y_point += ref_y;
+    
+         next_x_vals.push_back(x_point);
+         next_y_vals.push_back(y_point);
+        }
+  
+          msgJson["next_x"] = next_x_vals;
+          msgJson["next_y"] = next_y_vals;
+
           auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);

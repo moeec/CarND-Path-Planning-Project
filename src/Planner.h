@@ -40,11 +40,8 @@ class Planner {
     
     void previous_path_data(const vector<double> &x,const vector<double> &y, double prev_s, double prev_d);
   
-    json populate_path_w_traffic(int lane, vector<vector<double>> sensor_fusion, vector<double> map_waypoints_x, vector<double> map_waypoints_y, vector<double> map_waypoints_s, vector<double> map_waypoints_dx, vector<double> map_waypoints_dy);
   
-    int lane = 1;
-  
-    vector<WayPoint> points_group;
+   // vector<WayPoint> points_group;
     vector<double> get_x_values(); 
     vector<double> get_y_values(); 
     double car_x;
@@ -55,7 +52,7 @@ class Planner {
     double car_speed;
     double end_s;
     double end_d;
-    double ref_vel;
+    //double ref_vel;
     vector<double> previous_path_x;
     vector<double> previous_path_y;
   
