@@ -7,6 +7,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
+
 #include "Planner.h"
 #include "WayPoint.h"
 #include "Path.h"
@@ -178,7 +179,6 @@ string hasData(string s)
 }
 
 
-
 int main() {
   uWS::Hub h;
 
@@ -188,7 +188,6 @@ int main() {
   vector<double> map_waypoints_s;
   vector<double> map_waypoints_dx;
   vector<double> map_waypoints_dy;
-  int tel_passthru = 0;
 
   // Waypoint map to read from
   string map_file_ = "../data/highway_map.csv";
@@ -233,7 +232,8 @@ int main() {
         
         string event = j[0].get<string>();
         
-        if (event == "telemetry") {
+        if (event == "telemetry") 
+        {
           // j[1] is the data JSON object
           
           // Main car's localization Data
@@ -243,6 +243,13 @@ int main() {
           double car_d = j[1]["d"];
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
+          
+          std::cout << "***Debug in telemetry**"; 
+          std::cout << "car_x"<<car_x; 
+          std::cout << "car_y"<<car_y;
+          std::cout << "car_s"<<car_s;
+          std::cout << "car_yaw"<<car_yaw;
+          std::cout << "car_speed"<<car_speed;
 
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
@@ -256,68 +263,35 @@ int main() {
           auto sensor_fusion = j[1]["sensor_fusion"];
 
           json msgJson;
-          // Take in size of previous run
-          int previous_path_size = previous_path_x.size();
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           double dist_inc = 0.5;
+          
           Path highway;
-          Planner present_path;          
-          vector<double> ptsx;
-          vector<double> ptsy;
-          double ref_vel = 49.5;
-          int lane = 1;   
-          
-          if (previous_path_size<0)
-          {
-            car_s = end_path_s;
-          }
-          
-          bool too_close = false;
-          
-          //find ref_v to use
-          for(int i = 0; i < sensor_fusion.size(); i++)
-          {
-            //car is in my lane
-            float d = sensor_fusion[i][6];
-            if(d < (2+4*lane+2) && d > (2+4*lane-2))
-            {
-              double vx = sensor_fusion[i][3];
-              double vy = sensor_fusion[i][4];
-              double check_speed = sqrt(vx*vx+vy*vy);
-              double check_car_s = sensor_fusion[i][5];
-              
-              check_car_s+=((double)previous_path_size*.02*check_speed); //if using previous points can project s value out
-              //check s values greater than mine and s gap
-              if((check_car_s > car_s) && ((check_car_s-car_s)<30))
-              {
-                ref_vel = 29.5;
-                
-              }
-            }
-          }
-
-              
-              
-              
-              
-              
-              
-          
+          Planner present_path;
           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy, points_group );
+                    
           present_path.init(dist_inc,highway);
           present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
           present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
           
+          vector<double> ptsx;
+          vector<double> ptsy;
+  
+          double ref_vel = 49.5;
+          int lane = 1;
+          double ref_yaw;
           double ref_x = car_x;
           double ref_y = car_y;
-          double ref_yaw = deg2rad(car_yaw);
   
-
+          ref_yaw = (car_yaw*3.14159265359)/180;
+  
+          // Take in size of previous run
+          int previous_path_size = previous_path_x.size();
   
           std::cout << "***previous_path_size = "<<previous_path_size<< "***\n";
-          
+  
           // a close to empty previous path
           if (previous_path_size<2)
           {
@@ -327,6 +301,7 @@ int main() {
             std::cout << "car_y inside previous_path_size<2 car_y = "<<car_y<<"\n";
             std::cout << "car_yaw inside previous_path_size<2 car_yaw =  "<<car_yaw<<"\n";
             std::cout << "cos(car_yaw)"<<cos(car_yaw)<<"\n";
+    
     
            double prev_car_x = car_x - cos(car_yaw);
            double prev_car_y = car_y - sin(car_yaw);
@@ -373,7 +348,7 @@ int main() {
          ptsy.push_back(next_wp0[0]);
          ptsy.push_back(next_wp1[0]);
          ptsy.push_back(next_wp2[0]);
-       
+  
           // tranformation to local car co-ordinates, car reference angle to 0 degrees
          for(int i = 0; i < ptsx.size(); i++)
          {
@@ -427,28 +402,20 @@ int main() {
     
           x_point += ref_x;
           y_point += ref_y;
-          
+    
          next_x_vals.push_back(x_point);
          next_y_vals.push_back(y_point);
         }
-        
-        for(int i = 0; i < 50; i++)
-        {
-          double next_s = car_s+(i+1)*dist_inc;
-          double next_d = 6;
-          vector<double> xy = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          next_x_vals.push_back(xy[0]);
-          next_y_vals.push_back(xy[1]);
-         }
   
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
-
-          auto msg = "42[\"control\","+ msgJson.dump()+"]";
-
-          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-        }  // end "telemetry" if
-      } else {
+        json msgJson_to_send;
+        msgJson_to_send["next_x"] = next_x_vals;
+        msgJson_to_send["next_y"] = next_y_vals;  
+        auto msg = "42[\"control\","+ msgJson.dump()+"]";
+        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+          
+      }        // end "telemet     } 
+      else 
+      {
         // Manual driving
         std::string msg = "42[\"manual\",{}]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
