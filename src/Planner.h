@@ -63,8 +63,6 @@ class Planner {
     double pi =  M_PI; 
 
   
-    
-  
   private:
 
   vector<double> next_x_vals;
