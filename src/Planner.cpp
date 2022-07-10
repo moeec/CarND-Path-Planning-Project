@@ -40,7 +40,7 @@ int Planner::getLane(double d0)
   return mylane;
 }
 
-void Planner::predict(double ego_s, int prev_size, vector<double> sensor_fusion) 
+void Planner::predict(vector<double> sensor_fusion) 
 {
   
 }

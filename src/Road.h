@@ -18,17 +18,17 @@ class Road
   // Road functions
   Vehicle get_ego();
 
-  void populate_traffic();
+  //void populate_traffic();
 
-  void advance();
+  //void advance();
 
-  void display(int timestep);
+  //void display(int timestep);
 
-  void add_ego(int lane_num, int s, std::vector<int> &config_data);
+  //void add_ego(int lane_num, int s, std::vector<int> &config_data);
 
-  void cull();
+  //void cull();
 
-  // Road variables
+  // variables for the Road
   int update_width = 70;
 
   int vehicles_added = 0;
@@ -41,7 +41,7 @@ class Road
 
   std::map<int, Vehicle> vehicles;
 
-  std::string ego_rep = " *** ";
+  //std::string ego_rep = " *** ";
 
   std::vector<int> lane_speeds; 
 };

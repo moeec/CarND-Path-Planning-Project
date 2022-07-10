@@ -32,7 +32,7 @@ class Planner {
     
     int getLane(double d0);
     
-    void predict(double ego_s, int prev_size, vector<double> sensor_fusion);
+    void predict(vector<double> sensor_fusion);
     
     void set_planner_path(vector<double> x,vector<double> y,vector<double> s,vector<double> dx, vector<double> dy);
     
