@@ -41,7 +41,7 @@ vector<Vehicle> Vehicle::generate_predictions(vector<vector<double>> sensor_fusi
     
     std::cout << "Inside prediction for loop interation #"<<i<<"\n";
     std::cout << " of "<<sensor_fusion.size()<<"\n";
-    std::cout <d is"<<sensor_fusion[i][6]<<"\n";
+    std::cout <<"d is"<<sensor_fusion[i][6]<<"\n";
     
     if (sensor_fusion[i][6]>0)
     {          
