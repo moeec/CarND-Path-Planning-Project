@@ -12,6 +12,7 @@
 #include "WayPoint.h"
 #include "Path.h"
 #include "spline.h"
+using namespace std;
 
 // for convenience
 using nlohmann::json;
@@ -149,7 +150,8 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
   // calculate s value
   double frenet_s = 0;
-  for (int i = 0; i < prev_wp; ++i) {
+  for (int i = 0; i < prev_wp; ++i) 
+  {
     frenet_s += distance(maps_x[i],maps_y[i],maps_x[i+1],maps_y[i+1]);
   }
 
@@ -160,18 +162,14 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
-//   else the empty string "" will be returned.
-string hasData(string s) 
-{
+// else the empty string "" will be returned.
+string hasData(string s) {
   auto found_null = s.find("null");
   auto b1 = s.find_first_of("[");
   auto b2 = s.find_first_of("}");
-  if (found_null != string::npos) 
-  {
+  if (found_null != string::npos) {
     return "";
-  } 
-  else if (b1 != string::npos && b2 != string::npos) 
-  {
+  } else if (b1 != string::npos && b2 != string::npos) {
     return s.substr(b1, b2 - b1 + 2);
   }
   return "";
@@ -214,7 +212,14 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
   
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+    //Car's starting lane
+  int lane = 1;
+  double ref_vel = 1.7;
+  bool too_close = false;
+  
+
+  
+  h.onMessage([&too_close, &ref_vel, &lane,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
@@ -256,6 +261,7 @@ int main() {
           // Sensor Fusion Data, a list of all other cars on the same side 
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
+          int previous_path_size = previous_path_x.size();
           std::cout << "sensor_fusion"<<sensor_fusion[0][6]<<"\n";
           std::cout << "size of sensor_fusion"<<sensor_fusion.size()<<"\n";
           std::cout << "sensor_fusion 0, 1: "<<sensor_fusion[0][1]<<"\n";
@@ -270,23 +276,37 @@ int main() {
           std::cout << "sensor_fusion 1, 4: "<<sensor_fusion[1][4]<<"\n";
           std::cout << "sensor_fusion 1, 5: "<<sensor_fusion[1][5]<<"\n";
           std::cout << "sensor_fusion 1, 6: "<<sensor_fusion[1][6]<<"\n";
-          int lane = 1;
-          double ref_vel = 1.7;
-          bool too_close = false;
-          int previous_path_size = previous_path_x.size();
+
+
+          std::cout << "previous_path_size = "<<previous_path_size<<"\n";
           
           if (previous_path_size>0)
           {
             car_s = end_path_s;
           }
+          bool car_left= false;
+          bool car_right = false;
+          bool car_ahead = false;
             
           //find ref_v to use
           for(int i = 0; i < sensor_fusion.size(); i++)
           {
             //car is in my lane
             float d = sensor_fusion[i][6];
-            if(d < (2+4*lane+2) && d > (2+4*lane-2))  // with a lane = 1 this would be d < 8 && d > 4
+            int check_lane;
+            if(d > 0 && d < 4) 
             {
+              check_lane = 0;
+            } 
+            else if(d > 4 && d < 8)
+            {
+              check_lane = 1;
+            } 
+            else if(d > 8 and d < 12) 
+            {
+              check_lane = 2;
+            }
+                     
               double vx = sensor_fusion[i][3];
               double vy = sensor_fusion[i][4];
               double check_speed = sqrt(vx*vx+vy*vy);
@@ -297,13 +317,21 @@ int main() {
               
               check_car_s+=((double)previous_path_size*.02*check_speed); //if using previous points can project s value out;
               //check s values greater than mine and s gap
-              if((check_car_s > car_s) && ((check_car_s-car_s)<30))
+              if(check_lane == lane) 
               {
-                too_close = true;   
+                car_ahead |= check_car_s > car_s && (check_car_s - car_s) < 30;
+              } 
+              else if((check_lane - lane) == -1) 
+              {
+                car_left |= (car_s+30) > check_car_s  && (car_s-30) < check_car_s;
+
+              } 
+              else if((check_lane - lane) == 1) 
+              {
+                car_right |= (car_s+30) > check_car_s  && (car_s-30) < check_car_s;
               }
-            }
           }
-          
+             
           json msgJson;
           Path highway;
           Planner present_path;
@@ -370,14 +398,54 @@ int main() {
            ptsy.push_back(ref_y_prev);
            ptsy.push_back(ref_y);
          }
+          
+          double s_wp0 = car_s+30; 
+          double d_wp0 = (2+4)*lane;
+          double s_wp1 = car_s+60; 
+          double d_wp1 = (2+4)*lane;
+          double s_wp2 = car_s+90; 
+          double d_wp2 = (2+4)*lane;
+          
+         vector<double> next_wp0 = getXY(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+         vector<double> next_wp1 = getXY(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+         vector<double> next_wp2 = getXY(s_wp2, d_wp2, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
+          
+         ptsx.push_back(next_wp0[0]);
+         ptsx.push_back(next_wp1[0]);
+         ptsx.push_back(next_wp2[0]);
+          
+         ptsy.push_back(next_wp0[1]);
+         ptsy.push_back(next_wp1[1]);
+         ptsy.push_back(next_wp2[1]);
+          
+          // tranformation to local car co-ordinates, car reference angle to 0 degrees
+          for(int i = 0; i < ptsx.size(); i++)
+          {
+            //shift car refernece to angle to 0 degrees
+            double shift_x = ptsx[i]-ref_x;
+            double shift_y = ptsy[i]-ref_y;
+       
+            
+            ptsx[i] = (shift_x *cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
+            ptsy[i] = (shift_x *sin(0-ref_yaw)-shift_y*cos(0-ref_yaw));
+            
+           }
+          
+           
+          
+           // Spline created!
+           tk::spline s;
+           // setting (x,y) points to spline
+           s.set_points(ptsx,ptsy);
+
 
           
-          highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy, points_group );
-          present_path.init(dist_inc,highway);
-          present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
-          present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
-          Vehicle vehicles;
-          vector<Vehicle> predictions = vehicles.generate_predictions(sensor_fusion);
+           highway.set_map_path_data(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy, points_group );
+           present_path.init(dist_inc,highway);
+           present_path.get_localization_data(car_x,car_y,car_s,car_d,car_yaw,car_speed);
+           present_path.previous_path_data(previous_path_x, previous_path_y,end_path_s,end_path_d);
+           Vehicle vehicles;
+           vector<Vehicle> predictions = vehicles.generate_predictions(sensor_fusion);
           
 
           
@@ -399,45 +467,7 @@ int main() {
           std::cout << "***previous_path_size = "<<previous_path_size<< "***\n";
           
           
-          double s_wp0 = car_s+30; 
-          double d_wp0 = (2+4)*lane;
-          double s_wp1 = car_s+60; 
-          double d_wp1 = (2+4)*lane;
-          double s_wp2 = car_s+90; 
-          double d_wp2 = (2+4)*lane;
-          
-          vector<double> next_wp0 = getXY(s_wp0, d_wp0, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
-          vector<double> next_wp1 = getXY(s_wp1, d_wp1, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
-          vector<double> next_wp2 = getXY(s_wp2, d_wp2, map_waypoints_s, map_waypoints_x ,map_waypoints_y);
-          
-          ptsx.push_back(next_wp0[0]);
-          ptsx.push_back(next_wp1[0]);
-          ptsx.push_back(next_wp2[0]);
-          
-          ptsy.push_back(next_wp0[1]);
-          ptsy.push_back(next_wp1[1]);
-          ptsy.push_back(next_wp2[1]);
-          
-          
-       
-          // tranformation to local car co-ordinates, car reference angle to 0 degrees
-          for(int i = 0; i < ptsx.size(); i++)
-          {
-            //shift car refernece to angle to 0 degrees
-            double shift_x = ptsx[i]-ref_x;
-            double shift_y = ptsy[i]-ref_y;
-       
-            
-            //ptsx[i] = (shift_x *cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
-            //ptsy[i] = (shift_x *sin(0-ref_yaw)-shift_y*cos(0-ref_yaw));
-            
-           }
 
-           // Spline created!
-           tk::spline s;
-           // setting (x,y) points to spline
-           s.set_points(ptsx,ptsy);
-  
                   
            for(int i = 0; i < previous_path_size; i++)
            {
