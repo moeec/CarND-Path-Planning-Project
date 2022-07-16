@@ -214,7 +214,7 @@ int main() {
   
     //Car's starting lane
   int lane = 1;
-  double ref_vel = 1.7;
+  double ref_vel = 0.0;
   bool too_close = false;
   
 
@@ -331,34 +331,14 @@ int main() {
                 car_right |= (car_s+30) > check_car_s  && (car_s-30) < check_car_s;
               }
           }
-             
-          json msgJson;
-          Path highway;
-          Planner present_path;
-          double time_step = 0.02;
-          
-          // Take in size of previous run
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-          double dist_inc = 0.5;
-          
-          vector<double> ptsx;
-          vector<double> ptsy;
-          
+
           double ref_x = car_x;
           double ref_y = car_y;
           double ref_yaw = deg2rad(car_yaw);
           
-          if(too_close)
-          {
-            ref_vel -= .224;
-          }
-          else if(ref_vel < 49.5) 
-          {
-            ref_vel += .224; 
-          }
-          
-          
+          vector<double> ptsx;
+          vector<double> ptsy;
+         
           // a close to empty previous path
           if (previous_path_size<2)
           {
@@ -418,25 +398,53 @@ int main() {
          ptsy.push_back(next_wp1[1]);
          ptsy.push_back(next_wp2[1]);
           
-          // tranformation to local car co-ordinates, car reference angle to 0 degrees
-          for(int i = 0; i < ptsx.size(); i++)
-          {
-            //shift car refernece to angle to 0 degrees
-            double shift_x = ptsx[i]-ref_x;
-            double shift_y = ptsy[i]-ref_y;
-       
-            
-            ptsx[i] = (shift_x *cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
-            ptsy[i] = (shift_x *sin(0-ref_yaw)-shift_y*cos(0-ref_yaw));
-            
-           }
+         // tranformation to local car co-ordinates, car reference angle to 0 degrees
+         for(int i = 0; i < ptsx.size(); i++)
+         {
+           
+           //shift car refernece to angle to 0 degrees
+           double shift_x = ptsx[i]-ref_x;
+           double shift_y = ptsy[i]-ref_y;
+                  
+           ptsx[i] = (shift_x *cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
+           ptsy[i] = (shift_x *sin(0-ref_yaw)-shift_y*cos(0-ref_yaw));
+           
+         }
+          
+         // Spline created!
+         tk::spline s;
+         // setting (x,y) points to spline
+         s.set_points(ptsx,ptsy);
+          
+          
+          
+         json msgJson;
+         Path highway;
+         Planner present_path;
+         double time_step = 0.02;
+          
+         // Take in size of previous run
+         vector<double> next_x_vals;
+         vector<double> next_y_vals;
+         double dist_inc = 0.5;
+
+          
+         if(too_close)
+         {
+           ref_vel -= .224;
+         }
+         else if(ref_vel < 49.5) 
+         {
+           ref_vel += .224; 
+         }
+          
+          
+          
+          
           
            
           
-           // Spline created!
-           tk::spline s;
-           // setting (x,y) points to spline
-           s.set_points(ptsx,ptsy);
+
 
 
           
