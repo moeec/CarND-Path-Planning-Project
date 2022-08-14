@@ -245,7 +245,7 @@ int main() {
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
 
-          std::cout << "-----------------STATS-----------------\n";
+          std::cout << "-----------------STATS FOR NERDS----------------\n";
 
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
@@ -291,23 +291,34 @@ int main() {
               double check_speed = sqrt(vx*vx+vy*vy);
               double check_car_s = sensor_fusion[i][5];
               std::cout << "Car #"<<i<<"\n";
-              std::cout << "vx"<<vx<<"\n";
-              std::cout << "vy"<<vy<<"\n";
+              std::cout << "vx: "<<vx<<"\n";
+              std::cout << "vy: "<<vy<<"\n";
               
               check_car_s+=((double)previous_path_size*.02*check_speed); //used to predict where the location of the vehicle(future)
+              std::cout <<"Car" <<i<< "'s Frenet Coordinate: "<<check_car_s<<"\n";
+              std::cout << "Your car's s Frenet Coordinate: "<<car_s<<"\n";
+              std::cout << "Your car's Speed: "<<check_speed<<"\n";      
+               
               //check s values greater than mine and s gap
               if(check_lane == lane) // if in the same lane as ego car
               {
-                car_ahead |= check_car_s > car_s && (check_car_s - car_s) < 30;
+                // Checking to see if there is a car within 30m ahead
+                car_ahead = car_ahead | check_car_s > car_s && car_ahead | (check_car_s - car_s) < 30;	            
+                std::cout << "Car # "<<i<<" is "<<(check_car_s - car_s)<<" ahead"<<"\n";  
               } 
               else if((check_lane - lane) == -1) 
               {
-                car_left |= (car_s+30) > check_car_s  && (car_s-30) < check_car_s;
+                // Checking to see if there is a car within 30m to the left
+                car_left = car_left | (car_s+30) > check_car_s  && car_left | (car_s-30) < check_car_s;
+                std::cout << "Car # "<<i<<" is to the left"<<"\n";  
               } 
               else if((check_lane - lane) == 1) 
               {
-                car_right |= (car_s+30) > check_car_s  && (car_s-30) < check_car_s;
+                // Checking to see if there is a car within 30m to the left
+                car_right = car_right | (car_s+30) > check_car_s  && car_right | (car_s-30) < check_car_s;
+                std::cout << "Car # "<<i<<" is to the right"<<"\n"; 
               }
+            std::cout << "-----------End of Car # "<<i<<" Info-----------"<<"\n"; 
           }
           
           if(car_ahead) 
@@ -348,13 +359,11 @@ int main() {
             // Picking two previous points that are tangent to the car
            double prev_car_x = car_x - cos(car_yaw);
            double prev_car_y = car_y - sin(car_yaw);
-           std::cout << "prev_car_x *"<<prev_car_x<<"\n";
            ptsx.push_back(prev_car_x);
            ptsx.push_back(car_x);
         
            ptsy.push_back(prev_car_y);
            ptsy.push_back(car_y);
-           std::cout << "*leaving loop*"<<prev_car_x<<"\n";
          }
          else
          {
